@@ -1,0 +1,63 @@
+name: Claude Issue Triage
+
+on:
+  issues:
+    types: [opened, edited]
+
+# Cancel a previous triage run if the same issue is edited again quickly.
+concurrency:
+  group: issue-triage-${{ github.event.issue.number }}
+  cancel-in-progress: true
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write # required to apply labels and post the analysis comment
+      id-token: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Run Claude issue triage
+        id: claude-triage
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          claude_args: '--allowed-tools "Bash(gh issue view:*),Bash(gh label list:*),Bash(gh issue edit:*),Bash(gh issue comment:*)"'
+          prompt: |
+            You are triaging GitHub issue #${{ github.event.issue.number }} in the
+            repository ${{ github.repository }}. This is a vanilla-JavaScript Tetris
+            game (no build step, no tests) whose logic lives in three files:
+            `index.html` (DOM + two canvases), `style.css` (dark arcade theme), and
+            `game.js` (all game logic and state).
+
+            Do the following, in order:
+
+            1. List the labels that already exist in this repository:
+               `gh label list`
+
+            2. Read the issue:
+               `gh issue view ${{ github.event.issue.number }}`
+
+            3. Choose the labels that best fit this issue, but ONLY from the labels
+               that already exist (from step 1). Do NOT invent or create new labels.
+               Apply them with:
+               `gh issue edit ${{ github.event.issue.number }} --add-label "<label>"`
+               If no existing label is a good fit, skip this step.
+
+            4. Post ONE comment on the issue, written in English, with a thorough
+               technical analysis to guide later code work. Use:
+               `gh issue comment ${{ github.event.issue.number }} --body "<analysis>"`
+               The analysis should cover:
+               - A concise restatement of the problem or feature request.
+               - Which file(s)/area(s) are most likely involved
+                 (`index.html`, `style.css`, `game.js`) and why.
+               - A root-cause hypothesis (for bugs) or scope assessment
+                 (for features).
+               - A concrete suggested approach to fix or implement it.
+
+            Keep the comment focused and actionable. Do not modify any source files.
