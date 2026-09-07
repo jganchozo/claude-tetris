@@ -226,3 +226,102 @@ kbd {
   background: var(--accent);
   opacity: 0.85;
 }
+
+/* ---- Records ---- */
+.highscore-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 12px;
+}
+
+.highscore-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--text);
+  padding: 2px 4px;
+  border-radius: 3px;
+}
+
+.highscore-list li.empty {
+  color: var(--control-text);
+  justify-content: center;
+}
+
+.highscore-list li.highlight {
+  background: var(--accent);
+  color: var(--accent-text);
+  font-weight: 700;
+}
+
+.highscore-list .hs-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 70px;
+}
+
+.records-meta {
+  font-size: 11px;
+  color: var(--control-text);
+}
+
+#clear-scores-btn {
+  align-self: flex-start;
+  background: transparent;
+  color: var(--control-text);
+  border: 1px solid var(--panel-border);
+  border-radius: 4px;
+  padding: 4px 10px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+#clear-scores-btn:hover {
+  border-color: var(--overlay-title);
+  color: var(--overlay-title);
+}
+
+#overlay-highscores {
+  width: 200px;
+}
+
+.save-score-form {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.save-score-form.hidden {
+  display: none;
+}
+
+#player-name-input {
+  background: var(--panel-bg);
+  color: var(--text);
+  border: 1px solid var(--panel-border);
+  border-radius: 4px;
+  padding: 6px 8px;
+  font-size: 13px;
+  width: 120px;
+}
+
+#save-score-btn {
+  background: var(--accent);
+  color: var(--accent-text);
+  border: none;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+#save-score-btn:hover {
+  opacity: 0.85;
+}

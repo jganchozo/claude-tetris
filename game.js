@@ -28,6 +28,10 @@ const PIECES = [
 
 const LINE_SCORES = [0, 100, 300, 500, 800];
 
+const HS_KEY = 'tetris-highscores';
+const BEST_COMBO_KEY = 'tetris-best-combo';
+const BEST_LINES_KEY = 'tetris-best-lines';
+
 const canvas = document.getElementById('board');
 const ctx = canvas.getContext('2d');
 const nextCanvas = document.getElementById('next-canvas');
@@ -35,13 +39,22 @@ const nextCtx = nextCanvas.getContext('2d');
 const scoreEl = document.getElementById('score');
 const linesEl = document.getElementById('lines');
 const levelEl = document.getElementById('level');
+const comboEl = document.getElementById('combo');
+const highscoreListEl = document.getElementById('highscore-list');
+const bestComboEl = document.getElementById('best-combo');
+const bestLinesEl = document.getElementById('best-lines');
+const clearScoresBtn = document.getElementById('clear-scores-btn');
 const overlay = document.getElementById('overlay');
 const overlayTitle = document.getElementById('overlay-title');
 const overlayScore = document.getElementById('overlay-score');
+const overlayHighscoresEl = document.getElementById('overlay-highscores');
+const saveScoreForm = document.getElementById('save-score-form');
+const playerNameInput = document.getElementById('player-name-input');
+const saveScoreBtn = document.getElementById('save-score-btn');
 const restartBtn = document.getElementById('restart-btn');
 const themeToggleBtn = document.getElementById('theme-toggle');
 
-let board, current, next, score, lines, level, paused, gameOver, lastTime, dropAccum, dropInterval, animId;
+let board, current, next, score, lines, level, combo, maxCombo, pendingScore, paused, gameOver, lastTime, dropAccum, dropInterval, animId;
 
 function getThemeColor(name) {
   return getComputedStyle(document.body).getPropertyValue(name).trim();
@@ -64,6 +77,116 @@ function toggleTheme() {
 
 themeToggleBtn.addEventListener('click', toggleTheme);
 applyTheme(localStorage.getItem('tetris-theme') === 'light' ? 'light' : 'dark');
+
+function loadHighscores() {
+  try {
+    const raw = localStorage.getItem(HS_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveHighscoresList(list) {
+  try {
+    localStorage.setItem(HS_KEY, JSON.stringify(list));
+  } catch (e) {
+    // localStorage no disponible o llena: ignorar
+  }
+}
+
+function loadBestStat(key) {
+  try {
+    const value = parseInt(localStorage.getItem(key), 10);
+    return Number.isFinite(value) ? value : 0;
+  } catch (e) {
+    return 0;
+  }
+}
+
+function updateBestStat(key, value) {
+  try {
+    if (value > loadBestStat(key)) {
+      localStorage.setItem(key, String(value));
+    }
+  } catch (e) {
+    // ignorar
+  }
+}
+
+function sanitizeName(name) {
+  const trimmed = String(name || '').trim().slice(0, 12);
+  return trimmed || 'Anónimo';
+}
+
+function renderHighscoreListEl(el, list, highlightIndex) {
+  el.innerHTML = '';
+  if (!list.length) {
+    const li = document.createElement('li');
+    li.className = 'empty';
+    li.textContent = 'Sin récords';
+    el.appendChild(li);
+    return;
+  }
+  list.forEach((entry, i) => {
+    const li = document.createElement('li');
+    if (i === highlightIndex) li.classList.add('highlight');
+    const nameSpan = document.createElement('span');
+    nameSpan.className = 'hs-name';
+    const label = entry.pending ? '···' : (entry.name || 'Anónimo');
+    nameSpan.textContent = `${i + 1}. ${label}`;
+    const scoreSpan = document.createElement('span');
+    scoreSpan.textContent = entry.score.toLocaleString();
+    li.appendChild(nameSpan);
+    li.appendChild(scoreSpan);
+    el.appendChild(li);
+  });
+}
+
+function refreshHighscorePanel() {
+  renderHighscoreListEl(highscoreListEl, loadHighscores(), -1);
+  bestComboEl.textContent = loadBestStat(BEST_COMBO_KEY);
+  bestLinesEl.textContent = loadBestStat(BEST_LINES_KEY);
+}
+
+function saveCurrentScore() {
+  if (!pendingScore) return;
+  const entry = {
+    name: sanitizeName(playerNameInput.value),
+    score: pendingScore.score,
+    lines: pendingScore.lines,
+    combo: pendingScore.combo,
+    date: new Date().toISOString(),
+  };
+  const list = loadHighscores();
+  list.push(entry);
+  list.sort((a, b) => b.score - a.score);
+  list.length = Math.min(list.length, 5);
+  saveHighscoresList(list);
+  renderHighscoreListEl(overlayHighscoresEl, list, list.indexOf(entry));
+  refreshHighscorePanel();
+  saveScoreForm.classList.add('hidden');
+  pendingScore = null;
+}
+
+clearScoresBtn.addEventListener('click', () => {
+  const ok = confirm('¿Borrar todos los récords?');
+  // confirm() blocks the JS thread; resync the drop clock so the game
+  // doesn't take a giant unrequested step once the dialog closes.
+  lastTime = performance.now();
+  if (!ok) return;
+  localStorage.removeItem(HS_KEY);
+  localStorage.removeItem(BEST_COMBO_KEY);
+  localStorage.removeItem(BEST_LINES_KEY);
+  refreshHighscorePanel();
+});
+
+saveScoreBtn.addEventListener('click', saveCurrentScore);
+playerNameInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') saveCurrentScore();
+});
 
 function createBoard() {
   return Array.from({ length: ROWS }, () => new Array(COLS).fill(0));
@@ -127,12 +250,16 @@ function clearLines() {
     }
   }
   if (cleared) {
+    combo++;
+    if (combo > maxCombo) maxCombo = combo;
     lines += cleared;
     score += (LINE_SCORES[cleared] || 0) * level;
     level = Math.floor(lines / 10) + 1;
     dropInterval = Math.max(100, 1000 - (level - 1) * 90);
-    updateHUD();
+  } else {
+    combo = 0;
   }
+  updateHUD();
 }
 
 function ghostY() {
@@ -177,6 +304,7 @@ function updateHUD() {
   scoreEl.textContent = score.toLocaleString();
   linesEl.textContent = lines;
   levelEl.textContent = level;
+  comboEl.textContent = combo;
 }
 
 function drawBlock(context, x, y, colorIndex, size, alpha) {
@@ -244,9 +372,32 @@ function drawNext() {
 function endGame() {
   gameOver = true;
   cancelAnimationFrame(animId);
+  updateBestStat(BEST_COMBO_KEY, maxCombo);
+  updateBestStat(BEST_LINES_KEY, lines);
+
   overlayTitle.textContent = 'GAME OVER';
   overlayScore.textContent = `Puntuación: ${score.toLocaleString()}`;
+
+  const list = loadHighscores();
+  const minScore = list.length ? list[list.length - 1].score : -Infinity;
+  const qualifies = list.length < 5 || score > minScore;
+
+  if (qualifies) {
+    pendingScore = { score, lines, combo: maxCombo };
+    const candidate = { name: '', score, lines, combo: maxCombo, pending: true };
+    const preview = list.concat(candidate).sort((a, b) => b.score - a.score).slice(0, 5);
+    renderHighscoreListEl(overlayHighscoresEl, preview, preview.indexOf(candidate));
+    saveScoreForm.classList.remove('hidden');
+    playerNameInput.value = '';
+  } else {
+    pendingScore = null;
+    renderHighscoreListEl(overlayHighscoresEl, list, -1);
+    saveScoreForm.classList.add('hidden');
+  }
+
+  refreshHighscorePanel();
   overlay.classList.remove('hidden');
+  if (qualifies) playerNameInput.focus();
 }
 
 function togglePause() {
@@ -286,6 +437,9 @@ function init() {
   score = 0;
   lines = 0;
   level = 1;
+  combo = 0;
+  maxCombo = 0;
+  pendingScore = null;
   paused = false;
   gameOver = false;
   dropInterval = 1000;
@@ -294,6 +448,9 @@ function init() {
   next = randomPiece();
   spawn();
   updateHUD();
+  refreshHighscorePanel();
+  saveScoreForm.classList.add('hidden');
+  overlayHighscoresEl.innerHTML = '';
   overlay.classList.add('hidden');
   cancelAnimationFrame(animId);
   animId = requestAnimationFrame(loop);

@@ -30,6 +30,21 @@
         </div>
 
         <div class="panel-section">
+          <span class="label">COMBO</span>
+          <span class="value" id="combo">0</span>
+        </div>
+
+        <div class="panel-section records">
+          <span class="label">RECORDS</span>
+          <ol id="highscore-list" class="highscore-list"></ol>
+          <p class="records-meta">
+            Mejor combo: <span id="best-combo">0</span> ·
+            Máx. líneas: <span id="best-lines">0</span>
+          </p>
+          <button id="clear-scores-btn">Borrar records</button>
+        </div>
+
+        <div class="panel-section">
           <span class="label">NEXT</span>
           <canvas id="next-canvas" width="120" height="120"></canvas>
         </div>
@@ -51,6 +66,11 @@
       <div class="overlay-box">
         <p id="overlay-title">GAME OVER</p>
         <p id="overlay-score"></p>
+        <ol id="overlay-highscores" class="highscore-list"></ol>
+        <div id="save-score-form" class="save-score-form hidden">
+          <input id="player-name-input" type="text" maxlength="12" placeholder="Tu nombre" autocomplete="off" />
+          <button id="save-score-btn">Guardar</button>
+        </div>
         <button id="restart-btn">Reiniciar</button>
       </div>
     </div>
