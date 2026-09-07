@@ -14,6 +14,10 @@ const COLORS = [
   '#64b5f6', // J - pale blue
   '#ffb74d', // L - orange
   '#f06292', // O-ring - pink
+  '#4db6ac', // + pentomino - teal
+  '#a1887f', // U pentomino - brown
+  '#9575cd', // Y pentomino - lavender
+  '#ffd700', // single 1x1 bonus - gold
 ];
 
 const PIECES = [
@@ -26,9 +30,22 @@ const PIECES = [
   [[6,0,0],[6,6,6],[0,0,0]],                  // J
   [[0,0,7],[7,7,7],[0,0,0]],                  // L
   [[8,8,8],[8,0,8],[8,8,8]],                  // hollow 3x3 ring
+  [[0,9,0],[9,9,9],[0,9,0]],                  // + pentomino
+  [[10,0,10],[10,10,10],[0,0,0]],             // U pentomino
+  [[0,11,0,0],[11,11,0,0],[0,11,0,0],[0,11,0,0]], // Y pentomino
+  [[12]],                                     // single 1x1 (bonus tras un Tetris)
 ];
 
 const LINE_SCORES = [0, 100, 300, 500, 800];
+
+// Las 7 clásicas salen el 90% de las veces; el 10% restante se reparte
+// entre las especiales. El 1x1 no entra en el sorteo: solo llega como
+// recompensa tras un Tetris.
+const STANDARD_TYPES = [1, 2, 3, 4, 5, 6, 7];
+const SPECIAL_TYPES = [8, 9, 10, 11]; // 3x3 hueca, +, U, Y
+const SINGLE_TYPE = 12;
+const SPECIAL_CHANCE = 0.1;
+const TOAST_MS = 1500;
 
 const canvas = document.getElementById('board');
 const ctx = canvas.getContext('2d');
@@ -42,8 +59,9 @@ const overlayTitle = document.getElementById('overlay-title');
 const overlayScore = document.getElementById('overlay-score');
 const restartBtn = document.getElementById('restart-btn');
 const themeToggleBtn = document.getElementById('theme-toggle');
+const toastEl = document.getElementById('toast');
 
-let board, current, next, score, lines, level, paused, gameOver, lastTime, dropAccum, dropInterval, animId;
+let board, current, next, score, lines, level, paused, gameOver, lastTime, dropAccum, dropInterval, animId, bonusPending, toastTimer;
 
 function getThemeColor(name) {
   return getComputedStyle(document.body).getPropertyValue(name).trim();
@@ -71,10 +89,22 @@ function createBoard() {
   return Array.from({ length: ROWS }, () => new Array(COLS).fill(0));
 }
 
-function randomPiece() {
-  const type = Math.floor(Math.random() * (PIECES.length - 1)) + 1;
+function makePiece(type) {
   const shape = PIECES[type].map(row => [...row]);
   return { type, shape, x: Math.floor(COLS / 2) - Math.floor(shape[0].length / 2), y: 0 };
+}
+
+function pick(types) {
+  return types[Math.floor(Math.random() * types.length)];
+}
+
+function randomPiece() {
+  if (bonusPending) {
+    bonusPending = false;
+    return makePiece(SINGLE_TYPE);
+  }
+  const pool = Math.random() < SPECIAL_CHANCE ? SPECIAL_TYPES : STANDARD_TYPES;
+  return makePiece(pick(pool));
 }
 
 function collide(shape, ox, oy) {
@@ -134,6 +164,10 @@ function clearLines() {
     level = Math.floor(lines / 10) + 1;
     dropInterval = Math.max(100, 1000 - (level - 1) * 90);
     updateHUD();
+    if (cleared === 4) {
+      bonusPending = true;
+      showToast('¡TETRIS! Pieza bonus');
+    }
   }
 }
 
@@ -179,6 +213,18 @@ function updateHUD() {
   scoreEl.textContent = score.toLocaleString();
   linesEl.textContent = lines;
   levelEl.textContent = level;
+}
+
+function showToast(text) {
+  toastEl.textContent = text;
+  toastEl.classList.remove('hidden');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toastEl.classList.add('hidden'), TOAST_MS);
+}
+
+function hideToast() {
+  clearTimeout(toastTimer);
+  toastEl.classList.add('hidden');
 }
 
 function drawBlock(context, x, y, colorIndex, size, alpha) {
@@ -292,7 +338,9 @@ function init() {
   gameOver = false;
   dropInterval = 1000;
   dropAccum = 0;
+  bonusPending = false;
   lastTime = performance.now();
+  hideToast();
   next = randomPiece();
   spawn();
   updateHUD();

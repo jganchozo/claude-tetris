@@ -22,8 +22,9 @@ All state lives in module-scope `let` variables (`board`, `current`, `next`, `sc
 
 Key conventions to know before editing:
 
-- **Board model**: `ROWS × COLS` matrix; each cell is `0` (empty) or a color index `1–7`. The same index identifies the piece type and indexes into `COLORS` and `PIECES` (both are 1-based, with `null` at index 0).
+- **Board model**: `ROWS × COLS` matrix; each cell is `0` (empty) or a color index `1–12`. The same index identifies the piece type and indexes into `COLORS` and `PIECES` (both are 1-based, with `null` at index 0).
 - **Pieces** are square matrices; cells store the piece's own color index, not `1`. Rotation (`rotateCW`) builds a transposed/reversed copy; `tryRotate` applies SRS-style wall kicks by trying offsets `[0, -1, 1, -2, 2]`.
+- **Piece bag**: `randomPiece` is weighted, not uniform — `STANDARD_TYPES` (1–7) 90% of the time, `SPECIAL_TYPES` (8 hollow 3x3, 9 `+`, 10 `U`, 11 `Y`) the remaining `SPECIAL_CHANCE` (10%). `SINGLE_TYPE` (12, the 1x1) is never drawn: `clearLines` sets `bonusPending` on a Tetris and the next `randomPiece` call consumes it, so the reward appears in NEXT and drops one piece later. `makePiece(type)` builds a piece of a given type without drawing one.
 - **`collide(shape, x, y)`** is the single source of truth for legality — used for movement, rotation kicks, ghost projection (`ghostY`), drops, and spawn-time game-over detection. Negative `y` (above board) is allowed so pieces can spawn/rotate at the top.
 - **Game loop** (`loop`) is `requestAnimationFrame`-driven, accumulating `dt` into `dropAccum` and stepping the piece down once per `dropInterval` ms. Pause cancels the rAF and restarts it via `togglePause`; `animId` holds the handle.
 - **Locking flow**: `lockPiece` → `merge` (write piece into board) → `clearLines` → `spawn`. `spawn` promotes `next` to `current` and calls `endGame()` if the new piece already collides.

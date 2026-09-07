@@ -226,3 +226,32 @@ kbd {
   background: var(--accent);
   opacity: 0.85;
 }
+
+/* ---- Aviso de bonus ---- */
+.toast {
+  position: absolute;
+  top: 100px;
+  left: 150px; /* centro del tablero (300px de ancho) */
+  transform: translateX(-50%);
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: var(--panel-bg);
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  white-space: nowrap;
+  box-shadow: 0 4px 20px var(--board-shadow);
+  pointer-events: none;
+  animation: toast-pop 0.25s ease-out;
+}
+
+.toast.hidden {
+  display: none;
+}
+
+@keyframes toast-pop {
+  from { opacity: 0; transform: translateX(-50%) translateY(-8px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
