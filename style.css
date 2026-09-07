@@ -255,3 +255,38 @@ kbd {
   from { opacity: 0; transform: translateX(-50%) translateY(-8px); }
   to { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
+
+/* ---- Selector de skin ---- */
+#skin-select {
+  background: var(--panel-bg);
+  color: var(--text);
+  border: 1px solid var(--panel-border);
+  border-radius: 4px;
+  padding: 6px 8px;
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+#skin-select:hover {
+  border-color: var(--accent);
+}
+
+#skin-select:focus {
+  outline: 1px solid var(--accent);
+}
+
+/* ---- Skin: neón (fondo negro, se mantiene con claro/oscuro) ---- */
+body.skin-neon {
+  --bg: #050507;
+  --text: #e0e0e0;
+  --panel-bg: #0a0a10;
+  --panel-border: #24243a;
+  --grid-line: #14141c;
+  --label-color: #7a7a9a;
+  --control-text: #9a9ab0;
+  --kbd-bg: #16162a;
+  --kbd-border: #34345a;
+  --kbd-text: #cfcfe6;
+  --board-shadow: rgba(0, 0, 0, 0.8);
+}
