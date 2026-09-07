@@ -40,8 +40,14 @@ const overlayTitle = document.getElementById('overlay-title');
 const overlayScore = document.getElementById('overlay-score');
 const restartBtn = document.getElementById('restart-btn');
 const themeToggleBtn = document.getElementById('theme-toggle');
+const pauseOverlay = document.getElementById('pause-overlay');
+const resumeBtn = document.getElementById('resume-btn');
+const pauseRestartBtn = document.getElementById('pause-restart-btn');
+const controlsToggleBtn = document.getElementById('controls-toggle-btn');
+const pauseControlsEl = document.getElementById('pause-controls');
+const startLevelSelect = document.getElementById('start-level-select');
 
-let board, current, next, score, lines, level, paused, gameOver, lastTime, dropAccum, dropInterval, animId;
+let board, current, next, score, lines, level, paused, gameOver, lastTime, dropAccum, dropInterval, animId, startLevel;
 
 function getThemeColor(name) {
   return getComputedStyle(document.body).getPropertyValue(name).trim();
@@ -64,6 +70,30 @@ function toggleTheme() {
 
 themeToggleBtn.addEventListener('click', toggleTheme);
 applyTheme(localStorage.getItem('tetris-theme') === 'light' ? 'light' : 'dark');
+
+function clampStartLevel(value) {
+  const n = Math.floor(value);
+  if (!Number.isFinite(n)) return 1;
+  return Math.min(15, Math.max(1, n));
+}
+
+function getStoredStartLevel() {
+  return clampStartLevel(parseInt(localStorage.getItem('tetris-start-level'), 10) || 1);
+}
+
+function persistSelectedStartLevel() {
+  const chosen = clampStartLevel(parseInt(startLevelSelect.value, 10));
+  localStorage.setItem('tetris-start-level', String(chosen));
+  return chosen;
+}
+
+startLevelSelect.value = String(getStoredStartLevel());
+
+startLevelSelect.addEventListener('change', persistSelectedStartLevel);
+
+function computeDropInterval(lvl) {
+  return Math.max(100, 1000 - (lvl - 1) * 90);
+}
 
 function createBoard() {
   return Array.from({ length: ROWS }, () => new Array(COLS).fill(0));
@@ -129,8 +159,8 @@ function clearLines() {
   if (cleared) {
     lines += cleared;
     score += (LINE_SCORES[cleared] || 0) * level;
-    level = Math.floor(lines / 10) + 1;
-    dropInterval = Math.max(100, 1000 - (level - 1) * 90);
+    level = startLevel + Math.floor(lines / 10);
+    dropInterval = computeDropInterval(level);
     updateHUD();
   }
 }
@@ -253,13 +283,15 @@ function togglePause() {
   if (gameOver) return;
   paused = !paused;
   if (!paused) {
+    pauseOverlay.classList.add('hidden');
+    if (document.activeElement && document.activeElement !== document.body && typeof document.activeElement.blur === 'function') {
+      document.activeElement.blur();
+    }
     lastTime = performance.now();
     loop(lastTime);
   } else {
     cancelAnimationFrame(animId);
-    overlayTitle.textContent = 'PAUSA';
-    overlayScore.textContent = '';
-    overlay.classList.remove('hidden');
+    pauseOverlay.classList.remove('hidden');
   }
 }
 
@@ -281,27 +313,40 @@ function loop(ts) {
   }
 }
 
-function init() {
+function init(startLevelArg) {
+  startLevel = typeof startLevelArg === 'number' ? clampStartLevel(startLevelArg) : getStoredStartLevel();
   board = createBoard();
   score = 0;
   lines = 0;
-  level = 1;
+  level = startLevel;
   paused = false;
   gameOver = false;
-  dropInterval = 1000;
+  dropInterval = computeDropInterval(level);
   dropAccum = 0;
   lastTime = performance.now();
   next = randomPiece();
   spawn();
   updateHUD();
   overlay.classList.add('hidden');
+  pauseOverlay.classList.add('hidden');
   cancelAnimationFrame(animId);
   animId = requestAnimationFrame(loop);
 }
 
 document.addEventListener('keydown', e => {
-  if (e.code === 'KeyP') { togglePause(); return; }
-  if (paused || gameOver) return;
+  if (e.code === 'KeyP' || e.code === 'Escape') { e.preventDefault(); togglePause(); return; }
+  if (paused || gameOver) {
+    if (paused) {
+      const onLevelSelect = document.activeElement === startLevelSelect;
+      const isVerticalArrow = e.code === 'ArrowUp' || e.code === 'ArrowDown';
+      // Keep Space/Left/Right from re-activating a focused pause-menu button,
+      // but let the start-level <select> keep its native Up/Down navigation.
+      if (e.code === 'Space' || e.code === 'ArrowLeft' || e.code === 'ArrowRight' || (isVerticalArrow && !onLevelSelect)) {
+        e.preventDefault();
+      }
+    }
+    return;
+  }
   switch (e.code) {
     case 'ArrowLeft':
       if (!collide(current.shape, current.x - 1, current.y)) current.x--;
@@ -325,5 +370,15 @@ document.addEventListener('keydown', e => {
 });
 
 restartBtn.addEventListener('click', init);
+
+resumeBtn.addEventListener('click', togglePause);
+
+controlsToggleBtn.addEventListener('click', () => {
+  pauseControlsEl.classList.toggle('hidden');
+});
+
+pauseRestartBtn.addEventListener('click', () => {
+  init(persistSelectedStartLevel());
+});
 
 init();
