@@ -21,6 +21,9 @@
   --overlay-bg: rgba(10, 10, 20, 0.75);
   --overlay-title: #e57373;
   --board-shadow: rgba(0, 0, 0, 0.6);
+  --record-row: rgba(255, 255, 255, 0.04);
+  --record-highlight: rgba(122, 162, 247, 0.28);
+  --input-bg: #14141f;
 }
 
 body.light {
@@ -40,6 +43,9 @@ body.light {
   --overlay-bg: rgba(230, 230, 240, 0.85);
   --overlay-title: #c0392b;
   --board-shadow: rgba(0, 0, 0, 0.15);
+  --record-row: rgba(0, 0, 0, 0.04);
+  --record-highlight: rgba(59, 95, 217, 0.22);
+  --input-bg: #ffffff;
 }
 
 body {
@@ -59,6 +65,8 @@ body {
 }
 
 .title-bar {
+  position: relative;
+  z-index: 2; /* el conmutador de tema sigue accesible sobre los overlays */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -193,6 +201,10 @@ kbd {
   flex-direction: column;
   gap: 12px;
   align-items: center;
+  width: 100%;
+  max-height: 100%;
+  padding: 16px;
+  overflow-y: auto;
 }
 
 #overlay-title {
@@ -208,8 +220,19 @@ kbd {
   color: var(--accent);
 }
 
-#restart-btn {
-  margin-top: 8px;
+#overlay-score:empty {
+  display: none;
+}
+
+.overlay-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.btn-primary {
   background: var(--accent);
   color: var(--accent-text);
   border: none;
@@ -217,12 +240,170 @@ kbd {
   padding: 10px 28px;
   font-size: 14px;
   font-weight: 700;
+  font-family: inherit;
   cursor: pointer;
   letter-spacing: 1px;
-  transition: background 0.15s;
+  transition: opacity 0.15s;
 }
 
-#restart-btn:hover {
-  background: var(--accent);
+.btn-primary:hover {
   opacity: 0.85;
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--control-text);
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  padding: 7px 18px;
+  font-size: 12px;
+  font-family: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 1px;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.btn-ghost:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* ---- Tabla de récords ---- */
+.records {
+  width: 100%;
+  max-width: 260px;
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.records-title {
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--label-color);
+  font-weight: 700;
+}
+
+.records table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 12px;
+  color: var(--text);
+}
+
+.records th {
+  font-size: 9px;
+  letter-spacing: 1px;
+  color: var(--label-color);
+  font-family: system-ui, -apple-system, sans-serif;
+  font-weight: 700;
+  padding-bottom: 4px;
+}
+
+.records td,
+.records th {
+  padding: 3px 4px;
+  text-align: right;
+}
+
+.records td:nth-child(1),
+.records th:nth-child(1) {
+  text-align: center;
+  width: 18px;
+  color: var(--label-color);
+}
+
+.records td:nth-child(2),
+.records th:nth-child(2) {
+  text-align: left;
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.records tbody tr:nth-child(odd) {
+  background: var(--record-row);
+}
+
+.records tbody tr.record-new {
+  background: var(--record-highlight);
+  color: var(--accent);
+  font-weight: 700;
+  outline: 1px solid var(--accent);
+}
+
+.records-empty {
+  font-size: 12px;
+  color: var(--control-text);
+  padding: 6px 0;
+}
+
+.records-stats {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  border-top: 1px solid var(--panel-border);
+  padding-top: 6px;
+  font-size: 11px;
+  color: var(--control-text);
+}
+
+.records-stats b {
+  color: var(--accent);
+  font-family: 'Courier New', Courier, monospace;
+}
+
+/* ---- Formulario de nombre ---- */
+.name-form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+  width: 100%;
+  max-width: 260px;
+}
+
+.name-label {
+  font-size: 11px;
+  color: var(--control-text);
+}
+
+.name-row {
+  display: flex;
+  gap: 6px;
+  width: 100%;
+}
+
+#name-input {
+  flex: 1;
+  min-width: 0;
+  background: var(--input-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 13px;
+  user-select: text; /* body tiene user-select: none */
+}
+
+#name-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+#save-score-btn {
+  padding: 8px 14px;
+  font-size: 12px;
 }
