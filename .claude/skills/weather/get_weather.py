@@ -56,22 +56,52 @@ def _get_json(url, params):
     raise SystemExit(f"Network error reaching Open-Meteo: {last_err}. Check your connection and try again.")
 
 
+# US state abbreviations -> full names, so a "City, ST" qualifier can be matched
+# against the geocoder's admin1 (state) field.
+US_STATES = {
+    "AL": "Alabama", "AK": "Alaska", "AZ": "Arizona", "AR": "Arkansas",
+    "CA": "California", "CO": "Colorado", "CT": "Connecticut", "DE": "Delaware",
+    "DC": "District of Columbia", "FL": "Florida", "GA": "Georgia", "HI": "Hawaii",
+    "ID": "Idaho", "IL": "Illinois", "IN": "Indiana", "IA": "Iowa", "KS": "Kansas",
+    "KY": "Kentucky", "LA": "Louisiana", "ME": "Maine", "MD": "Maryland",
+    "MA": "Massachusetts", "MI": "Michigan", "MN": "Minnesota", "MS": "Mississippi",
+    "MO": "Missouri", "MT": "Montana", "NE": "Nebraska", "NV": "Nevada",
+    "NH": "New Hampshire", "NJ": "New Jersey", "NM": "New Mexico", "NY": "New York",
+    "NC": "North Carolina", "ND": "North Dakota", "OH": "Ohio", "OK": "Oklahoma",
+    "OR": "Oregon", "PA": "Pennsylvania", "RI": "Rhode Island", "SC": "South Carolina",
+    "SD": "South Dakota", "TN": "Tennessee", "TX": "Texas", "UT": "Utah",
+    "VT": "Vermont", "VA": "Virginia", "WA": "Washington", "WV": "West Virginia",
+    "WI": "Wisconsin", "WY": "Wyoming",
+}
+
+
 def geocode(name):
-    # The geocoder matches a place name, not "City, ST" — a state abbreviation
-    # like "FL" yields no results. Try the full string, then fall back to just
-    # the part before the first comma (the city).
-    candidates = [name]
-    if "," in name:
-        candidates.append(name.split(",", 1)[0].strip())
-    results = None
-    for cand in candidates:
-        data = _get_json(GEOCODE_URL, {"name": cand, "count": 1, "language": "en", "format": "json"})
-        results = data.get("results")
-        if results:
-            break
+    # The geocoder matches a bare place name, not "City, ST" — a qualifier like
+    # "FL" or "Alabama" yields no results. Split off the city (before the first
+    # comma) and keep the rest as region hints to disambiguate among matches.
+    city = name.split(",", 1)[0].strip()
+    hints = [h.strip() for h in name.split(",")[1:] if h.strip()]
+    # Expand any US state abbreviation hint to its full name (admin1 form).
+    expanded = set()
+    for h in hints:
+        expanded.add(h.lower())
+        if h.upper() in US_STATES:
+            expanded.add(US_STATES[h.upper()].lower())
+
+    # Fetch several candidates so we can pick the one matching the region hints,
+    # rather than blindly taking the globally most prominent same-named place.
+    data = _get_json(GEOCODE_URL, {"name": city, "count": 10, "language": "en", "format": "json"})
+    results = data.get("results")
     if not results:
         raise SystemExit(f"Could not find a location matching '{name}'.")
+
     r = results[0]
+    if expanded:
+        for cand in results:
+            fields = {str(cand.get(k, "")).lower() for k in ("admin1", "admin2", "country", "country_code")}
+            if fields & expanded:
+                r = cand
+                break
     label = ", ".join(p for p in (r.get("name"), r.get("admin1"), r.get("country")) if p)
     return r["latitude"], r["longitude"], label
 
