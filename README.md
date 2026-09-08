@@ -17,6 +17,7 @@ Implementación del clásico **Tetris** en JavaScript vanilla, usando HTML5 Canv
     - [Opción 1: abrir el archivo directamente](#opción-1-abrir-el-archivo-directamente)
     - [Opción 2: servidor local (recomendado)](#opción-2-servidor-local-recomendado)
   - [Controles](#controles)
+  - [Menú de pausa](#menú-de-pausa)
   - [Cómo funciona](#cómo-funciona)
     - [1. `index.html`](#1-indexhtml)
     - [2. `style.css`](#2-stylecss)
@@ -42,6 +43,7 @@ Es una versión jugable del Tetris clásico con todas las mecánicas que esperar
 - **Sistema de puntuación** clásico de Tetris (100 / 300 / 500 / 800 multiplicado por nivel).
 - **Niveles** que aumentan cada 10 líneas y aceleran la caída.
 - **Pausa** y **Game Over** con opción de reinicio.
+- **Menú de pausa completo**: reanudar, reiniciar, ver los controles y elegir el **nivel inicial** (1–15) de la próxima partida.
 
 ---
 
@@ -84,7 +86,26 @@ Después abre `http://localhost:8000` en el navegador.
 | `↑` o `X` | Rotar la pieza en sentido horario |
 | `↓`       | Soft drop (bajar más rápido)      |
 | `Espacio` | Hard drop (caída instantánea)     |
-| `P`       | Pausar / reanudar                 |
+| `P` o `Esc` | Pausar / reanudar               |
+
+---
+
+## Menú de pausa
+
+Al pulsar `P` o `Esc` durante la partida se abre un menú sobre el tablero con estas opciones:
+
+| Opción             | Qué hace                                                                              |
+| ------------------ | ------------------------------------------------------------------------------------- |
+| **Reanudar**       | Cierra el menú y continúa la partida donde se quedó.                                   |
+| **Reiniciar**      | Empieza una partida nueva sin recargar la página.                                      |
+| **Ver controles**  | Despliega la lista de teclas dentro del propio menú.                                   |
+| **Nivel inicial**  | Selector de 1 a 15: fija el nivel (y por tanto la velocidad) con el que arranca la **próxima** partida. |
+
+Mientras el menú está abierto **todas las teclas de juego quedan bloqueadas**, así que no es
+posible mover, rotar ni soltar la pieza sin querer al navegar por el menú o al volver al juego.
+
+El nivel inicial elegido se guarda en `localStorage` (`tetris-start-level`), igual que el tema
+(`tetris-theme`), de modo que se conserva entre sesiones.
 
 ---
 
@@ -98,7 +119,7 @@ Define la estructura visual:
 
 - Un `<canvas id="board">` de **300 × 600** píxeles donde se renderiza el tablero.
 - Un panel lateral con `SCORE`, `LINES`, `LEVEL`, vista de la siguiente pieza y la lista de controles.
-- Un overlay para los estados **PAUSA** y **GAME OVER**.
+- Un overlay compartido por el **menú de PAUSA** (con sus opciones) y el cartel de **GAME OVER**.
 
 ### 2. `style.css`
 
