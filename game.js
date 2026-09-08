@@ -350,15 +350,19 @@ function openPauseMenu() {
   startLevelSelect.value = String(startLevel);
 }
 
+// Evita que la siguiente pulsacion de tecla vuelva a activar un boton del menu.
+function blurActiveElement() {
+  if (document.activeElement && typeof document.activeElement.blur === 'function') {
+    document.activeElement.blur();
+  }
+}
+
 function closePauseMenu() {
   paused = false;
   setControlsVisible(false);
   pauseMenu.classList.add('hidden');
   overlay.classList.add('hidden');
-  // Evita que la siguiente pulsacion de tecla active un boton del menu.
-  if (document.activeElement && typeof document.activeElement.blur === 'function') {
-    document.activeElement.blur();
-  }
+  blurActiveElement();
   startLoop();
 }
 
@@ -401,6 +405,7 @@ function init() {
   pauseMenu.classList.add('hidden');
   gameOverBox.classList.remove('hidden');
   overlay.classList.add('hidden');
+  blurActiveElement();
   startLoop();
 }
 
