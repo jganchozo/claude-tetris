@@ -17,6 +17,7 @@ Implementación del clásico **Tetris** en JavaScript vanilla, usando HTML5 Canv
     - [Opción 1: abrir el archivo directamente](#opción-1-abrir-el-archivo-directamente)
     - [Opción 2: servidor local (recomendado)](#opción-2-servidor-local-recomendado)
   - [Controles](#controles)
+  - [Tabla de récords](#tabla-de-récords)
   - [Cómo funciona](#cómo-funciona)
     - [1. `index.html`](#1-indexhtml)
     - [2. `style.css`](#2-stylecss)
@@ -42,6 +43,8 @@ Es una versión jugable del Tetris clásico con todas las mecánicas que esperar
 - **Sistema de puntuación** clásico de Tetris (100 / 300 / 500 / 800 multiplicado por nivel).
 - **Niveles** que aumentan cada 10 líneas y aceleran la caída.
 - **Pausa** y **Game Over** con opción de reinicio.
+- **Pantalla de inicio** con la tabla de récords y botón para empezar a jugar.
+- **Tabla de récords local** (top 5) guardada en `localStorage`, con nombre del jugador, mejor combo y máximo de líneas.
 
 ---
 
@@ -86,6 +89,22 @@ Después abre `http://localhost:8000` en el navegador.
 | `Espacio` | Hard drop (caída instantánea)     |
 | `P`       | Pausar / reanudar                 |
 
+> Mientras escribes tu nombre en la pantalla de Game Over el teclado no controla la pieza.
+
+---
+
+## Tabla de récords
+
+Al abrir el juego aparece una **pantalla de inicio** con la tabla de récords y el botón **Jugar**.
+
+- Se guardan las **5 mejores puntuaciones** con el nombre del jugador.
+- Al terminar una partida, si la puntuación entra en el top 5 aparece un campo de texto para escribir el nombre (máximo 12 caracteres; si se deja vacío se guarda como `Anónimo`).
+- La entrada recién guardada se **resalta** en la tabla.
+- También se guardan el **mejor combo** (locks consecutivos que eliminan al menos una línea) y el **máximo de líneas** de una partida.
+- El botón **Borrar récords** vacía la tabla.
+
+Todo se persiste en `localStorage` bajo la clave `tetris-highscores`. Los datos se validan al leerlos, así que un almacenamiento corrupto o editado a mano no rompe el juego: simplemente se descarta. Los nombres se pintan con `textContent`, nunca con `innerHTML`, de modo que no pueden inyectar HTML.
+
 ---
 
 ## Cómo funciona
@@ -98,7 +117,8 @@ Define la estructura visual:
 
 - Un `<canvas id="board">` de **300 × 600** píxeles donde se renderiza el tablero.
 - Un panel lateral con `SCORE`, `LINES`, `LEVEL`, vista de la siguiente pieza y la lista de controles.
-- Un overlay para los estados **PAUSA** y **GAME OVER**.
+- Una pantalla de inicio (`#start-screen`) con la tabla de récords.
+- Un overlay para los estados **PAUSA** y **GAME OVER** (este último incluye el formulario de nombre y la tabla de récords).
 
 ### 2. `style.css`
 
@@ -121,6 +141,8 @@ Contiene toda la lógica del juego. A grandes rasgos:
 ### Flujo del juego
 
 ```
+showStartScreen()                   → menú con la tabla de récords
+      ↓  (botón «Jugar»)
 init()
   ├─ createBoard()                  → matriz vacía
   ├─ next = randomPiece()
@@ -136,7 +158,7 @@ init()
    keydown → mover / rotar / soft-drop / hard-drop / pausa
 ```
 
-Cuando una pieza recién generada ya colisiona al aparecer (`spawn`), se dispara `endGame()` y se muestra el overlay de **Game Over**.
+Cuando una pieza recién generada ya colisiona al aparecer (`spawn`), se dispara `endGame()`, se guardan las estadísticas (mejor combo y máximo de líneas) y se muestra el overlay de **Game Over** con la tabla de récords.
 
 ---
 
