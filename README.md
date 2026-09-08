@@ -24,6 +24,7 @@ Implementación del clásico **Tetris** en JavaScript vanilla, usando HTML5 Canv
     - [Flujo del juego](#flujo-del-juego)
   - [Tecnologías](#tecnologías)
   - [Estructura del proyecto](#estructura-del-proyecto)
+  - [Skins (temas visuales)](#skins-temas-visuales)
   - [Personalización](#personalización)
   - [Licencia](#licencia)
 
@@ -42,6 +43,7 @@ Es una versión jugable del Tetris clásico con todas las mecánicas que esperar
 - **Sistema de puntuación** clásico de Tetris (100 / 300 / 500 / 800 multiplicado por nivel).
 - **Niveles** que aumentan cada 10 líneas y aceleran la caída.
 - **Pausa** y **Game Over** con opción de reinicio.
+- **Skins visuales** (Retro, Neón, Pastel y Pixel art) que cambian paleta y forma de los bloques al vuelo.
 
 ---
 
@@ -161,6 +163,38 @@ Cuando una pieza recién generada ya colisiona al aparecer (`spawn`), se dispara
 ├── game.js         # Toda la lógica del Tetris (~300 líneas)
 └── README.md
 ```
+
+---
+
+## Skins (temas visuales)
+
+En el panel lateral, bajo la etiqueta `SKIN`, hay un selector con cuatro apariencias:
+
+| Skin          | Aspecto                                                              |
+| ------------- | -------------------------------------------------------------------- |
+| **Retro**     | Bloques cuadrados y colores planos (el estilo original). Por defecto. |
+| **Neón**      | Fondo negro y contornos brillantes con glow (`shadowBlur`).           |
+| **Pastel**    | Colores suaves y esquinas redondeadas.                               |
+| **Pixel art** | Bisel de 8 bits y una textura de píxeles sobre cada bloque.          |
+
+El cambio es **inmediato y sin recargar** (también con el juego en pausa) y la elección
+se guarda en `localStorage` bajo la clave `tetris-skin`. Las skins son **independientes
+del tema claro/oscuro**: puedes combinar cualquier skin con cualquiera de los dos temas.
+
+Cada skin se define como una entrada del objeto `SKINS` en `game.js`:
+
+```js
+neon: {
+  label: 'Neón',                          // texto de la <option>
+  colors: [null, /* … índices 1–8 … */],  // misma forma que COLORS
+  boardBg: '#04040a',                     // null = fondo del tema (CSS)
+  gridLine: 'rgba(120, 120, 200, 0.18)',  // null = --grid-line del tema
+  drawBlock: drawBlockNeon,               // (ctx, px, py, size, color)
+}
+```
+
+Para añadir una quinta skin basta con **añadir otra entrada a `SKINS`** (con su paleta de
+índices 1–8 y su función de dibujo): el desplegable se genera solo a partir de ese objeto.
 
 ---
 

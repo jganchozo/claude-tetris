@@ -145,6 +145,40 @@ body {
   border-radius: 4px;
 }
 
+/* La skin Neon pinta su propio fondo negro en los canvas (desde game.js);
+   aqui solo se acompaña con un borde y un halo acordes. */
+body[data-skin="neon"] #board,
+body[data-skin="neon"] #next-canvas {
+  border-color: #2b2b55;
+  box-shadow: 0 0 30px rgba(90, 120, 255, 0.35);
+}
+
+/* ---- Selector de skin ---- */
+#skin-select {
+  width: 100%;
+  background: var(--panel-bg);
+  color: var(--text);
+  border: 1px solid var(--panel-border);
+  border-radius: 4px;
+  padding: 7px 8px;
+  font-family: inherit;
+  font-size: 12px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.2s, color 0.2s;
+}
+
+#skin-select:hover,
+#skin-select:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
+#skin-select option {
+  background: var(--panel-bg);
+  color: var(--text);
+}
+
 /* ---- Controles ---- */
 .controls ul {
   list-style: none;
