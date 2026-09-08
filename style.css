@@ -5,6 +5,7 @@
 }
 
 :root {
+  color-scheme: dark;
   --bg: #0f0f17;
   --text: #e0e0e0;
   --accent: #7aa2f7;
@@ -24,6 +25,7 @@
 }
 
 body.light {
+  color-scheme: light;
   --bg: #f0f0f5;
   --text: #20202a;
   --accent: #3b5fd9;
@@ -225,4 +227,134 @@ kbd {
 #restart-btn:hover {
   background: var(--accent);
   opacity: 0.85;
+}
+
+/* ---- Menú de pausa ---- */
+.hidden {
+  display: none !important;
+}
+
+.pause-menu {
+  gap: 16px;
+  width: 260px;
+  padding: 22px 20px;
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  box-shadow: 0 10px 30px var(--board-shadow);
+}
+
+.pause-title {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 5px;
+  color: var(--accent);
+}
+
+.menu-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.menu-btn {
+  width: 100%;
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  padding: 9px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.menu-btn:hover,
+.menu-btn:focus-visible {
+  border-color: var(--accent);
+  color: var(--accent);
+  outline: none;
+}
+
+.menu-btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
+}
+
+.menu-btn-primary:hover,
+.menu-btn-primary:focus-visible {
+  opacity: 0.85;
+  color: var(--accent-text);
+}
+
+.menu-controls {
+  width: 100%;
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  background: var(--bg);
+}
+
+.menu-controls ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.menu-controls li {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--control-text);
+  text-align: left;
+}
+
+.menu-controls li span {
+  margin-left: 4px;
+}
+
+.menu-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  align-items: center;
+}
+
+.menu-label {
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--label-color);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+#start-level {
+  width: 100%;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  padding: 7px 10px;
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+#start-level:focus-visible {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.menu-hint {
+  font-size: 10px;
+  color: var(--control-text);
+  line-height: 1.4;
 }
