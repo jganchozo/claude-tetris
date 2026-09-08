@@ -153,8 +153,11 @@ function merge() {
         board[current.y + r][current.x + c] = current.shape[r][c];
 }
 
+// Curva clasica hasta el nivel 11 (100 ms); a partir de ahi sigue bajando
+// para que los niveles 12-15 del selector no sean todos igual de rapidos.
 function speedForLevel(lv) {
-  return Math.max(100, 1000 - (lv - 1) * 90);
+  if (lv <= 11) return 1000 - (lv - 1) * 90;
+  return Math.max(50, 100 - (lv - 11) * 10);
 }
 
 function clampLevel(value) {
@@ -295,11 +298,12 @@ function stopLoop() {
   }
 }
 
+// No reinicia dropAccum: si lo hiciera, pausar y reanudar sin parar
+// cancelaria la gravedad indefinidamente. Solo init() lo pone a cero.
 function startLoop() {
   stopLoop();
   if (paused || gameOver) return;
   lastTime = performance.now();
-  dropAccum = 0;
   animId = requestAnimationFrame(loop);
 }
 
@@ -348,6 +352,9 @@ function openPauseMenu() {
   pauseMenu.classList.remove('hidden');
   overlay.classList.remove('hidden');
   startLevelSelect.value = String(startLevel);
+  // El overlay tapa la barra de titulo: el boton de tema queda inalcanzable
+  // con el raton, asi que tampoco debe recibir el foco con Tab.
+  themeToggleBtn.disabled = true;
 }
 
 // Evita que la siguiente pulsacion de tecla vuelva a activar un boton del menu.
@@ -362,6 +369,7 @@ function closePauseMenu() {
   setControlsVisible(false);
   pauseMenu.classList.add('hidden');
   overlay.classList.add('hidden');
+  themeToggleBtn.disabled = false;
   blurActiveElement();
   startLoop();
 }
@@ -405,6 +413,7 @@ function init() {
   pauseMenu.classList.add('hidden');
   gameOverBox.classList.remove('hidden');
   overlay.classList.add('hidden');
+  themeToggleBtn.disabled = false;
   blurActiveElement();
   startLoop();
 }
@@ -416,8 +425,11 @@ document.addEventListener('keydown', e => {
     return;
   }
   if (paused || gameOver) {
-    // Menu abierto: ninguna tecla de juego llega a la partida ni activa un boton.
-    if (GAME_KEYS.includes(e.code) && e.target !== startLevelSelect) e.preventDefault();
+    // Menu abierto: ninguna tecla de juego llega a la partida. Se exceptuan los
+    // controles del overlay para no romper su manejo nativo del teclado
+    // (Espacio en un boton, flechas en el selector de nivel).
+    const inOverlay = overlay.contains ? overlay.contains(e.target) : false;
+    if (GAME_KEYS.includes(e.code) && !inOverlay) e.preventDefault();
     return;
   }
   switch (e.code) {
