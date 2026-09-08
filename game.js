@@ -60,10 +60,28 @@ function getThemeColor(name) {
   return getComputedStyle(document.body).getPropertyValue(name).trim();
 }
 
+// localStorage puede lanzar (navegación privada, cookies bloqueadas, iframe
+// restringido). Nunca debe abortar la carga del script.
+function readStorage(key) {
+  try {
+    return localStorage.getItem(key);
+  } catch (e) {
+    return null;
+  }
+}
+
+function writeStorage(key, value) {
+  try {
+    localStorage.setItem(key, value);
+  } catch (e) {
+    /* almacenamiento lleno o deshabilitado: el juego sigue funcionando */
+  }
+}
+
 function applyTheme(theme) {
   document.body.classList.toggle('light', theme === 'light');
   themeToggleBtn.textContent = theme === 'light' ? '☀️' : '🌙';
-  localStorage.setItem('tetris-theme', theme);
+  writeStorage('tetris-theme', theme);
   redrawAll();
 }
 
@@ -73,7 +91,7 @@ function toggleTheme() {
 }
 
 themeToggleBtn.addEventListener('click', toggleTheme);
-applyTheme(localStorage.getItem('tetris-theme') === 'light' ? 'light' : 'dark');
+applyTheme(readStorage('tetris-theme') === 'light' ? 'light' : 'dark');
 
 /* ---------- Tabla de récords (localStorage) ---------- */
 
@@ -99,12 +117,7 @@ function sanitizeName(value) {
 
 // Nunca confiar en localStorage: puede estar corrupto o editado a mano.
 function loadRecords() {
-  let raw = null;
-  try {
-    raw = localStorage.getItem(RECORDS_KEY);
-  } catch (e) {
-    return emptyRecords();
-  }
+  const raw = readStorage(RECORDS_KEY);
   if (!raw) return emptyRecords();
 
   let data;
@@ -136,11 +149,7 @@ function loadRecords() {
 }
 
 function saveRecords(data) {
-  try {
-    localStorage.setItem(RECORDS_KEY, JSON.stringify(data));
-  } catch (e) {
-    /* almacenamiento lleno o deshabilitado: el juego sigue funcionando */
-  }
+  writeStorage(RECORDS_KEY, JSON.stringify(data));
 }
 
 function qualifies(value) {
@@ -586,22 +595,32 @@ document.addEventListener('keydown', e => {
   updateHUD();
 });
 
-// Si la partida clasificó y el jugador sale sin pulsar «Guardar»,
-// la puntuación se guarda igualmente con el nombre escrito (o «Anónimo»).
+// Si la partida clasificó y el jugador sale sin pulsar «Guardar», la
+// puntuación se guarda igualmente con el nombre escrito (o «Anónimo»).
+// Devuelve la posición en la tabla, -1 si al final no entró en el top 5,
+// o null si no había nada pendiente de guardar.
 function commitPendingScore() {
-  if (nameForm.classList.contains('hidden')) return;
-  highlightIndex = addRecord(nameInput.value, score, lines, level, bestCombo);
+  if (nameForm.classList.contains('hidden')) return null;
   nameForm.classList.add('hidden');
+  // La tabla puede haber cambiado desde endGame() (por ejemplo, otra pestaña).
+  if (!qualifies(score)) return -1;
+  return addRecord(nameInput.value, score, lines, level, bestCombo);
+}
+
+function commitAndHighlight() {
+  const index = commitPendingScore();
+  if (index !== null) highlightIndex = index;
 }
 
 // Envoltorio: init() no debe recibir el Event del click como argumento.
 restartBtn.addEventListener('click', () => {
+  // init() reinicia el resaltado, así que aquí solo interesa persistir.
   commitPendingScore();
   init();
 });
 startBtn.addEventListener('click', () => init());
 menuBtn.addEventListener('click', () => {
-  commitPendingScore();
+  commitAndHighlight();
   showStartScreen();
 });
 
@@ -611,7 +630,7 @@ resetRecordsBtn.addEventListener('click', () => {
 
 nameForm.addEventListener('submit', e => {
   e.preventDefault();
-  commitPendingScore();
+  commitAndHighlight();
   renderRecords();
   restartBtn.focus();
 });

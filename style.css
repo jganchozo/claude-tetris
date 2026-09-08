@@ -395,10 +395,7 @@ kbd {
   color: var(--text);
   font-family: inherit;
   font-size: 13px;
-}
-
-#name-input {
-  user-select: text;
+  user-select: text; /* body tiene user-select: none */
 }
 
 #name-input:focus {
